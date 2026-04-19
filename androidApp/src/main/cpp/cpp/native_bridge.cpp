@@ -24,7 +24,7 @@ extern "C" {
 // initPipeline(delegateType, numThreads, ballModelPath, courtModelPath, courtDelegateType) → boolean
 // ────────────────────────────────────────────────────────────────────────────
 JNIEXPORT jboolean JNICALL
-Java_com_hermitech_hermivision_domain_inference_NativePipeline_nativeInitPipeline(
+Java_com_hermitech_hermivision_data_inference_NativePipeline_nativeInitPipeline(
     JNIEnv* env, jobject /* this */,
     jint delegateType, jint numThreads,
     jstring ballModelPath, jstring courtModelPath,
@@ -77,7 +77,7 @@ Java_com_hermitech_hermivision_domain_inference_NativePipeline_nativeInitPipelin
 // Zero-copy YUV submission from decoder/camera → FramePool
 // ────────────────────────────────────────────────────────────────────────────
 JNIEXPORT void JNICALL
-Java_com_hermitech_hermivision_domain_inference_NativePipeline_nativeSubmitYuvFrame(
+Java_com_hermitech_hermivision_data_inference_NativePipeline_nativeSubmitYuvFrame(
     JNIEnv* env, jobject /* this */,
     jobject yBuffer, jobject uvBuffer,
     jint width, jint height,
@@ -102,7 +102,7 @@ Java_com_hermitech_hermivision_domain_inference_NativePipeline_nativeSubmitYuvFr
 // Submit RGB frame via OpenCV Mat pointer (used by legacy Mat-based callers)
 // ────────────────────────────────────────────────────────────────────────────
 JNIEXPORT void JNICALL
-Java_com_hermitech_hermivision_domain_inference_NativePipeline_nativeSubmitFrame(
+Java_com_hermitech_hermivision_data_inference_NativePipeline_nativeSubmitFrame(
     JNIEnv* env, jobject /* this */,
     jlong matAddr, jint frameId, jint origWidth, jint origHeight
 ) {
@@ -122,7 +122,7 @@ Java_com_hermitech_hermivision_domain_inference_NativePipeline_nativeSubmitFrame
 static constexpr int RESULT_SIZE = 35;
 
 JNIEXPORT jfloatArray JNICALL
-Java_com_hermitech_hermivision_domain_inference_NativePipeline_nativeProcessLatestFrame(
+Java_com_hermitech_hermivision_data_inference_NativePipeline_nativeProcessLatestFrame(
     JNIEnv* env, jobject /* this */
 ) {
     jfloatArray resultArray = env->NewFloatArray(RESULT_SIZE);
@@ -158,7 +158,7 @@ Java_com_hermitech_hermivision_domain_inference_NativePipeline_nativeProcessLate
 // Kept for backward compat — submits to pool then processes immediately
 // ────────────────────────────────────────────────────────────────────────────
 JNIEXPORT jfloatArray JNICALL
-Java_com_hermitech_hermivision_domain_inference_NativePipeline_nativeProcessFrame(
+Java_com_hermitech_hermivision_data_inference_NativePipeline_nativeProcessFrame(
     JNIEnv* env, jobject /* this */,
     jlong matAddr, jint frameId, jint origWidth, jint origHeight
 ) {
@@ -174,14 +174,14 @@ Java_com_hermitech_hermivision_domain_inference_NativePipeline_nativeProcessFram
     g_pipeline->submitFrame(rgbMat, frameId, origWidth, origHeight);
 
     // Now call processLatestFrame via the same JNI path
-    return Java_com_hermitech_hermivision_domain_inference_NativePipeline_nativeProcessLatestFrame(env, nullptr);
+    return Java_com_hermitech_hermivision_data_inference_NativePipeline_nativeProcessLatestFrame(env, nullptr);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
 // releasePipeline() — free all native resources
 // ────────────────────────────────────────────────────────────────────────────
 JNIEXPORT void JNICALL
-Java_com_hermitech_hermivision_domain_inference_NativePipeline_nativeReleasePipeline(
+Java_com_hermitech_hermivision_data_inference_NativePipeline_nativeReleasePipeline(
     JNIEnv* env, jobject /* this */
 ) {
     if (g_pipeline) {
@@ -196,7 +196,7 @@ Java_com_hermitech_hermivision_domain_inference_NativePipeline_nativeReleasePipe
 // getActiveDelegate() → String
 // ────────────────────────────────────────────────────────────────────────────
 JNIEXPORT jstring JNICALL
-Java_com_hermitech_hermivision_domain_inference_NativePipeline_nativeGetActiveDelegate(
+Java_com_hermitech_hermivision_data_inference_NativePipeline_nativeGetActiveDelegate(
     JNIEnv* env, jobject /* this */
 ) {
     std::string delegate = g_pipeline ? g_pipeline->getActiveDelegate() : "none";
