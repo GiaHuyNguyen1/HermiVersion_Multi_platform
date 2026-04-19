@@ -1,0 +1,22 @@
+name: iosApp
+options:
+  bundleIdPrefix: com.hermitech
+  deploymentTarget:
+    iOS: "16.0"
+  xcodeVersion: "15.0"
+targets:
+  iosApp:
+    type: application
+    platform: iOS
+    sources:
+      - path: iosApp
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        INFOPLIST_FILE: iosApp/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.hermitech.hermivision
+        PRODUCT_NAME: HermiVision
+        CODE_SIGN_STYLE: Automatic
+    dependencies:
+      - framework: ../shared/build/XCFrameworks/debug/shared.xcframework
+        embed: true

@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS DeviceConfig (
+    id          INTEGER PRIMARY KEY NOT NULL DEFAULT 1,
+    tier        TEXT    NOT NULL,
+    delegate    TEXT    NOT NULL,
+    modelName   TEXT    NOT NULL,
+    numThreads  INTEGER NOT NULL,
+    summary     TEXT    NOT NULL,
+    nnapiMs     INTEGER NOT NULL DEFAULT -1,
+    gpuMs       INTEGER NOT NULL DEFAULT -1,
+    cpuMs       INTEGER NOT NULL DEFAULT -1
+);
+
+getConfig:
+SELECT * FROM DeviceConfig WHERE id = 1;
+
+insertOrReplace:
+INSERT OR REPLACE INTO DeviceConfig(id, tier, delegate, modelName, numThreads, summary, nnapiMs, gpuMs, cpuMs)
+VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteConfig:
+DELETE FROM DeviceConfig WHERE id = 1;
