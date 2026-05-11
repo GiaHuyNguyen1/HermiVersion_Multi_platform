@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		17781D88731F1E258D727B98 /* shared.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 8081BF82C94B0AD82FB8BCBC /* shared.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		1B0198FAEF218E6B2B25C92C /* shared.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8081BF82C94B0AD82FB8BCBC /* shared.xcframework */; };
-		25B7C0B44D5A4A8E9F1B0011 /* YoloBall-nano-FP32.mlpackage in Resources */ = {isa = PBXBuildFile; fileRef = 25B7C0B34D5A4A8E9F1B0011 /* YoloBall-nano-FP32.mlpackage */; };
+		246A7F4180C6A2246DCB2EEB /* Court-Keypoint-FP32.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 37240FEA35B519BD30C591B8 /* Court-Keypoint-FP32.mlpackage */; };
 		307C2654CD5972A25FB7FD87 /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668CECA83ACC03A83C85A623 /* iOSApp.swift */; };
 		40C9B68ABF77FCE3A272B007 /* ProcessingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCBB6196BFB7D0E2110AFDF5 /* ProcessingView.swift */; };
 		56B0305B5D3847FC6B326502 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8509E5A49E4A5CAAEB3ADB /* ContentView.swift */; };
@@ -20,6 +20,7 @@
 		AE725475C374F9894020A7F9 /* VideoPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A69130684517C4D10FA6FF /* VideoPickerView.swift */; };
 		C037C70C0C0E94A733FFD436 /* LiveAnalysisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465E86F363FCE9D160837536 /* LiveAnalysisView.swift */; };
 		CC8261CCA9A7BB7641FEE303 /* IosInferencePipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BB05BD3E98B76516F5E546 /* IosInferencePipeline.swift */; };
+		D41DA001C775C8F1D0BFDB81 /* YoloBall-nano-FP32.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4AC672AAC81E702BD55F7096 /* YoloBall-nano-FP32.mlpackage */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -39,8 +40,9 @@
 /* Begin PBXFileReference section */
 		08A69130684517C4D10FA6FF /* VideoPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPickerView.swift; sourceTree = "<group>"; };
 		23C8D6FE6AAD0DC096FB445D /* ResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultsView.swift; sourceTree = "<group>"; };
-		25B7C0B34D5A4A8E9F1B0011 /* YoloBall-nano-FP32.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper.mlpackage; path = "YoloBall-nano-FP32.mlpackage"; sourceTree = "<group>"; };
+		37240FEA35B519BD30C591B8 /* Court-Keypoint-FP32.mlpackage */ = {isa = PBXFileReference; path = "Court-Keypoint-FP32.mlpackage"; sourceTree = "<group>"; };
 		465E86F363FCE9D160837536 /* LiveAnalysisView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveAnalysisView.swift; sourceTree = "<group>"; };
+		4AC672AAC81E702BD55F7096 /* YoloBall-nano-FP32.mlpackage */ = {isa = PBXFileReference; path = "YoloBall-nano-FP32.mlpackage"; sourceTree = "<group>"; };
 		5B4E1D3D2BC36E1E2EF54D0E /* AVFoundationCameraController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVFoundationCameraController.swift; sourceTree = "<group>"; };
 		668CECA83ACC03A83C85A623 /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 		8081BF82C94B0AD82FB8BCBC /* shared.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = shared.xcframework; path = ../shared/build/XCFrameworks/debug/shared.xcframework; sourceTree = "<group>"; };
@@ -64,17 +66,6 @@
 		};
 /* End PBXFrameworksBuildPhase section */
 
-/* Begin PBXResourcesBuildPhase section */
-		25B7C0B54D5A4A8E9F1B0011 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				25B7C0B44D5A4A8E9F1B0011 /* YoloBall-nano-FP32.mlpackage in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXResourcesBuildPhase section */
-
 /* Begin PBXGroup section */
 		12F91FC6F98E025F5BED6F9B /* theme */ = {
 			isa = PBXGroup;
@@ -82,6 +73,15 @@
 				AAB5EA660D2E066BBD9D8E36 /* DesignTokens.swift */,
 			);
 			path = theme;
+			sourceTree = "<group>";
+		};
+		1D118AA5F3CC0477DF2FE1D2 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				37240FEA35B519BD30C591B8 /* Court-Keypoint-FP32.mlpackage */,
+				4AC672AAC81E702BD55F7096 /* YoloBall-nano-FP32.mlpackage */,
+			);
+			path = Models;
 			sourceTree = "<group>";
 		};
 		1DB4B685CAEE8BEFEBBAEF94 /* iosApp */ = {
@@ -92,18 +92,10 @@
 				668CECA83ACC03A83C85A623 /* iOSApp.swift */,
 				813BE9ABF7BC8C89F3442934 /* camera */,
 				9A153A184A166D9F3D2E4546 /* inference */,
-				25B7C0B24D5A4A8E9F1B0011 /* Models */,
+				1D118AA5F3CC0477DF2FE1D2 /* Models */,
 				30B7F33940B957BF52B850E1 /* ui */,
 			);
 			path = iosApp;
-			sourceTree = "<group>";
-		};
-		25B7C0B24D5A4A8E9F1B0011 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				25B7C0B34D5A4A8E9F1B0011 /* YoloBall-nano-FP32.mlpackage */,
-			);
-			path = Models;
 			sourceTree = "<group>";
 		};
 		30B7F33940B957BF52B850E1 /* ui */ = {
@@ -209,7 +201,6 @@
 			buildPhases = (
 				297B59D9CE634556D6007C40 /* Sources */,
 				EF8A6E9BFD470986D9D5C9B5 /* Frameworks */,
-				25B7C0B54D5A4A8E9F1B0011 /* Resources */,
 				DB76241340C08196BD9C492C /* Embed Frameworks */,
 			);
 			buildRules = (
@@ -263,6 +254,7 @@
 			files = (
 				A45E3823C64BC572ED9045F4 /* AVFoundationCameraController.swift in Sources */,
 				56B0305B5D3847FC6B326502 /* ContentView.swift in Sources */,
+				246A7F4180C6A2246DCB2EEB /* Court-Keypoint-FP32.mlpackage in Sources */,
 				8A0B048AF5B5A2AAD09AAD3F /* DesignTokens.swift in Sources */,
 				CC8261CCA9A7BB7641FEE303 /* IosInferencePipeline.swift in Sources */,
 				C037C70C0C0E94A733FFD436 /* LiveAnalysisView.swift in Sources */,
@@ -270,6 +262,7 @@
 				40C9B68ABF77FCE3A272B007 /* ProcessingView.swift in Sources */,
 				592BB22D54D7299C1F2C8D9D /* ResultsView.swift in Sources */,
 				AE725475C374F9894020A7F9 /* VideoPickerView.swift in Sources */,
+				D41DA001C775C8F1D0BFDB81 /* YoloBall-nano-FP32.mlpackage in Sources */,
 				307C2654CD5972A25FB7FD87 /* iOSApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
