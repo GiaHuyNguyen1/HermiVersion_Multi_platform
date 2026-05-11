@@ -35,6 +35,7 @@ struct LiveAnalysisView: View {
                     if !viewModel.isStopped && viewModel.courtValid {
                         CourtOverlayView(
                             keypoints: viewModel.courtKeypoints,
+                            frameSize: viewModel.courtFrameSize,
                             containerSize: geo.size
                         )
                     }
@@ -83,25 +84,52 @@ struct LiveAnalysisView: View {
 
 struct CourtOverlayView: View {
     let keypoints: [CGPoint]
+    let frameSize: CGSize
     let containerSize: CGSize
 
+    private let lines = [
+        (0, 1), (2, 3), (0, 2), (1, 3),
+        (4, 8), (8, 10), (10, 5), (6, 9),
+        (9, 11), (11, 7), (8, 9), (10, 11), (12, 13)
+    ]
+
     var body: some View {
-        ZStack {
-            ForEach(Array(keypoints.enumerated()), id: \.offset) { entry in
-                let point = entry.element
-                Circle()
-                    .fill(Color(hex: "3B82F6").opacity(0.75))
-                    .frame(width: 9, height: 9)
-                    .overlay(
-                        Circle()
-                            .stroke(Color.white.opacity(0.7), lineWidth: 1)
-                    )
-                    .position(
-                        x: point.x * containerSize.width,
-                        y: point.y * containerSize.height
-                    )
+        Canvas { context, _ in
+            let mappedPoints = keypoints.map(mapPointToPreview)
+
+            for line in lines where line.0 < mappedPoints.count && line.1 < mappedPoints.count {
+                var path = Path()
+                path.move(to: mappedPoints[line.0])
+                path.addLine(to: mappedPoints[line.1])
+                context.stroke(
+                    path,
+                    with: .color(Color(hex: "3B82F6").opacity(line.0 >= 12 ? 0.75 : 0.5)),
+                    lineWidth: line.0 >= 12 ? 3 : 2
+                )
+            }
+
+            for point in mappedPoints {
+                let rect = CGRect(x: point.x - 4.5, y: point.y - 4.5, width: 9, height: 9)
+                context.fill(Path(ellipseIn: rect), with: .color(Color(hex: "3B82F6").opacity(0.75)))
+                context.stroke(Path(ellipseIn: rect), with: .color(.white.opacity(0.7)), lineWidth: 1)
             }
         }
+        .allowsHitTesting(false)
+    }
+
+    private func mapPointToPreview(_ point: CGPoint) -> CGPoint {
+        let sourceWidth = max(frameSize.width, 1)
+        let sourceHeight = max(frameSize.height, 1)
+        let scale = max(containerSize.width / sourceWidth, containerSize.height / sourceHeight)
+        let displayedWidth = sourceWidth * scale
+        let displayedHeight = sourceHeight * scale
+        let offsetX = (containerSize.width - displayedWidth) / 2
+        let offsetY = (containerSize.height - displayedHeight) / 2
+
+        return CGPoint(
+            x: offsetX + point.x * sourceWidth * scale,
+            y: offsetY + point.y * sourceHeight * scale
+        )
     }
 }
 
@@ -209,6 +237,7 @@ class LiveViewModel: ObservableObject {
     @Published var activeDelegate = "Preview"
     @Published var courtValid = false
     @Published var courtKeypoints: [CGPoint] = []
+    @Published var courtFrameSize = CGSize(width: 1280, height: 720)
     @Published var cameraError: String?
     @Published var inferenceMessage: String?
     @Published var isStopped = false
@@ -223,6 +252,7 @@ class LiveViewModel: ObservableObject {
         displayFps = 0
         courtValid = false
         courtKeypoints = []
+        courtFrameSize = CGSize(width: 1280, height: 720)
         cameraError = nil
         inferenceMessage = nil
         isStopped = false
@@ -266,6 +296,7 @@ class LiveViewModel: ObservableObject {
                     || self.ballRect != result.ballRect
                     || self.courtValid != result.courtValid
                     || self.courtKeypoints != result.courtKeypoints
+                    || self.courtFrameSize != result.courtFrameSize
                     || self.activeDelegate != result.runtimeLabel
                 else {
                     return
@@ -274,6 +305,7 @@ class LiveViewModel: ObservableObject {
                 self.ballRect = result.ballRect
                 self.courtValid = result.courtValid
                 self.courtKeypoints = result.courtKeypoints
+                self.courtFrameSize = result.courtFrameSize
                 self.activeDelegate = result.runtimeLabel
             }
         }
@@ -484,6 +516,7 @@ struct CameraPreviewView: UIViewRepresentable {
         let view = CameraPreviewContainerView()
         view.previewLayer.videoGravity = .resizeAspectFill
         view.previewLayer.session = session
+        view.applyLandscapeVideoOrientation()
         return view
     }
     
@@ -492,6 +525,7 @@ struct CameraPreviewView: UIViewRepresentable {
         if previewView.previewLayer.session !== session {
             previewView.previewLayer.session = session
         }
+        previewView.applyLandscapeVideoOrientation()
     }
 }
 
@@ -508,5 +542,16 @@ final class CameraPreviewContainerView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         previewLayer.frame = bounds
+        applyLandscapeVideoOrientation()
+    }
+
+    func applyLandscapeVideoOrientation() {
+        guard let connection = previewLayer.connection,
+              connection.isVideoOrientationSupported
+        else {
+            return
+        }
+
+        connection.videoOrientation = .landscapeRight
     }
 }

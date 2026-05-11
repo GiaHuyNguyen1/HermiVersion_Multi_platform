@@ -39,6 +39,7 @@ final class AVFoundationCameraController: NSObject {
     private var totalCourtDetections = 0
     private var lastMetricsReportFrame = 0
     private var runtimeLabel = "Preview"
+    private let liveVideoOrientation: AVCaptureVideoOrientation = .landscapeRight
     
     init(session: AVCaptureSession) {
         self.session = session
@@ -109,6 +110,7 @@ final class AVFoundationCameraController: NSObject {
         
         if session.canAddOutput(videoOutput) {
             session.addOutput(videoOutput)
+            applyLandscapeVideoOrientation(to: videoOutput.connection(with: .video))
         } else {
             session.commitConfiguration()
             reportError("Unable to attach the camera output.")
@@ -118,6 +120,14 @@ final class AVFoundationCameraController: NSObject {
         session.commitConfiguration()
         isConfigured = true
         NSLog("[HermiVision][iOS] AVCaptureSession configured")
+    }
+
+    private func applyLandscapeVideoOrientation(to connection: AVCaptureConnection?) {
+        guard let connection, connection.isVideoOrientationSupported else {
+            return
+        }
+
+        connection.videoOrientation = liveVideoOrientation
     }
     
     private func reportError(_ message: String) {
@@ -166,7 +176,7 @@ extension AVFoundationCameraController: AVCaptureVideoDataOutputSampleBufferDele
         }
         
         totalFramesProcessed += 1
-        let result = inferencePipeline.process(pixelBuffer: pixelBuffer)
+        let result = inferencePipeline.process(pixelBuffer: pixelBuffer, orientation: .up)
         if let result {
             runtimeLabel = result.runtimeLabel
             if result.ballVisible {
