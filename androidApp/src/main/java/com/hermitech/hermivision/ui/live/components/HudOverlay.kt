@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hermitech.hermivision.domain.court.CourtDetectionManager
 import com.hermitech.hermivision.domain.model.CourtResult
 import com.hermitech.hermivision.ui.live.LiveViewModel
 
@@ -20,7 +21,7 @@ import com.hermitech.hermivision.ui.live.LiveViewModel
  * Always-on HUD overlay: FPS badge, close button, status chips, STOP button, LIVE indicator.
  */
 @Composable
-internal fun HudOverlay(ballState: LiveViewModel.BallState, courtResult: CourtResult, fps: Float, miniMapState: LiveViewModel.MiniMapState, onStop: () -> Unit, onClose: () -> Unit)
+internal fun HudOverlay(ballState: LiveViewModel.BallState, courtResult: CourtResult, fps: Float, miniMapState: CourtDetectionManager.MiniMapState, onStop: () -> Unit, onClose: () -> Unit)
 {
     Box(modifier = Modifier.fillMaxSize()) {
 

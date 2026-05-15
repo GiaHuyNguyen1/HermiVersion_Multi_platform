@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import com.hermitech.hermivision.data.AppDatabaseFactory
 import com.hermitech.hermivision.data.DatabaseDriverFactory
 import com.hermitech.hermivision.data.toAIConfig
-import com.hermitech.hermivision.domain.court.CourtHomography
+import com.hermitech.hermivision.domain.court.CourtDetectionManager
 import com.hermitech.hermivision.data.inference.NativePipeline
 import com.hermitech.hermivision.domain.inference.DelegateType
 import com.hermitech.hermivision.domain.model.CourtResult
@@ -16,17 +16,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import org.opencv.android.OpenCVLoader
 import java.io.File
 
-/**
- * ViewModel for live camera analysis.
- *
- * Manages:
- *  - Pipeline lifecycle (init → release)
- *  - Real-time result parsing from float[35] → UI state
- *  - FPS calculation (rolling average)
- *  - Session stats (total frames, ball detections)
- *  - Court homography (perspective → 2D mini-map)
- *  - Stop → results transition
- */
 class LiveViewModel : ViewModel() {
 
     companion object {
@@ -35,10 +24,10 @@ class LiveViewModel : ViewModel() {
         private const val FPS_WINDOW_SIZE = 30
     }
 
-    // ── Pipeline ──
     val pipeline = NativePipeline()
 
-    // ── UI State ──
+    private val courtManager = CourtDetectionManager()
+
     data class BallState(
         val isVisible: Boolean = false,
         val x: Float = 0f,
@@ -47,26 +36,6 @@ class LiveViewModel : ViewModel() {
         val h: Float = 0f,
         val score: Float = 0f
     )
-
-    data class MiniMapState(
-        val homography: FloatArray? = null,
-        val ballPosition: Pair<Float, Float>? = null,
-        val isValid: Boolean = false
-    ) {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (other !is MiniMapState) return false
-            return isValid == other.isValid &&
-                    ballPosition == other.ballPosition &&
-                    homography.contentEquals(other.homography)
-        }
-        override fun hashCode(): Int {
-            var result = homography?.contentHashCode() ?: 0
-            result = 31 * result + (ballPosition?.hashCode() ?: 0)
-            result = 31 * result + isValid.hashCode()
-            return result
-        }
-    }
 
     data class SessionStats(
         val totalFrames: Int = 0,
@@ -80,8 +49,7 @@ class LiveViewModel : ViewModel() {
     private val _ballState = MutableStateFlow(BallState())
     val ballState: StateFlow<BallState> = _ballState.asStateFlow()
 
-    private val _courtResult = MutableStateFlow(CourtResult.EMPTY)
-    val courtResult: StateFlow<CourtResult> = _courtResult.asStateFlow()
+    val courtResult: StateFlow<CourtResult> = courtManager.courtResult
 
     private val _fps = MutableStateFlow(0f)
     val fps: StateFlow<Float> = _fps.asStateFlow()
@@ -98,20 +66,14 @@ class LiveViewModel : ViewModel() {
     private val _sessionStats = MutableStateFlow(SessionStats())
     val sessionStats: StateFlow<SessionStats> = _sessionStats.asStateFlow()
 
-    private val _miniMapState = MutableStateFlow(MiniMapState())
-    val miniMapState: StateFlow<MiniMapState> = _miniMapState.asStateFlow()
+    val miniMapState: StateFlow<CourtDetectionManager.MiniMapState> = courtManager.miniMapState
 
-    // ── Session tracking ──
     private var sessionStartTimeMs = 0L
     private var totalFramesProcessed = 0
     private var totalBallDetections = 0
-    private var totalCourtDetections = 0
-    private var lastValidCourt = CourtResult.EMPTY
+    private var frameWidth = 1280f
+    private var frameHeight = 720f
 
-    // ── Homography cache ──
-    private var cachedHomography: FloatArray? = null
-
-    // ── FPS tracking ──
     private val frameTimes = LongArray(FPS_WINDOW_SIZE)
     private var frameTimeIndex = 0
     private var frameCount = 0
@@ -119,9 +81,11 @@ class LiveViewModel : ViewModel() {
     private var fpsSum = 0f
     private var fpsCount = 0
 
-    /**
-     * Initialize the C++ pipeline (model extraction + JNI init).
-     */
+    fun setFrameDimensions(width: Int, height: Int) {
+        frameWidth = width.toFloat()
+        frameHeight = height.toFloat()
+    }
+
     suspend fun initPipeline(context: Context) {
         if (_isInitialized.value) return
 
@@ -158,6 +122,7 @@ class LiveViewModel : ViewModel() {
 
             Log.i(TAG, "Pipeline initialized — delegate: ${pipeline.getActiveDelegate()}")
             sessionStartTimeMs = System.currentTimeMillis()
+            courtManager.reset()
             _isInitialized.value = true
 
         } catch (e: Exception) {
@@ -166,13 +131,11 @@ class LiveViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Called from CameraAnalyzer for each processed frame.
-     */
     fun onResult(result: FloatArray) {
         if (_isStopped.value) return
 
-        // ── Parse ball (indices 0-5) ──
+        val currentTimeMs = System.currentTimeMillis()
+
         val ballVisible = result[NativePipeline.IDX_BALL_VISIBLE] > 0.5f
         _ballState.value = BallState(
             isVisible = ballVisible,
@@ -183,63 +146,27 @@ class LiveViewModel : ViewModel() {
             score = result[NativePipeline.IDX_BALL_SCORE]
         )
 
-        // ── Parse court (indices 6-34) ──
-        val courtValid = result[NativePipeline.IDX_COURT_VALID] > 0.5f
-        if (courtValid) {
-            val keypoints = mutableListOf<Pair<Float, Float>>()
-            for (i in 0 until 14) {
-                val x = result[NativePipeline.IDX_COURT_KP_START + i * 2]
-                val y = result[NativePipeline.IDX_COURT_KP_START + i * 2 + 1]
-                keypoints.add(Pair(x, y))
-            }
-            val court = CourtResult(valid = true, keypoints = keypoints)
-            _courtResult.value = court
-            lastValidCourt = court
-            totalCourtDetections++
-
-            // ── Recompute homography from 4 outer corners ──
-            val cameraCorners = listOf(
-                keypoints[0],  // top-left
-                keypoints[1],  // top-right
-                keypoints[2],  // bottom-left
-                keypoints[3]   // bottom-right
-            )
-            cachedHomography = CourtHomography.computeCourtToMiniMap(cameraCorners)
-        }
-
-        // ── Project ball onto mini-map ──
-        val H = cachedHomography
-        var miniMapBall: Pair<Float, Float>? = null
-        if (ballVisible && H != null) {
-            val ballX = result[NativePipeline.IDX_BALL_X]
-            val ballY = result[NativePipeline.IDX_BALL_Y]
-            miniMapBall = CourtHomography.transformPoint(H, ballX, ballY)
-            // Clamp to mini-map bounds
-            miniMapBall?.let { (mx, my) ->
-                if (mx < 0 || my < 0 ||
-                    mx > CourtHomography.MINI_MAP_WIDTH ||
-                    my > CourtHomography.MINI_MAP_HEIGHT) {
-                    miniMapBall = null  // Ball outside court area
-                }
-            }
-        }
-
-        _miniMapState.value = MiniMapState(
-            homography = cachedHomography,
-            ballPosition = miniMapBall,
-            isValid = cachedHomography != null
+        courtManager.processCourtFromResult(
+            result = result,
+            courtValidIndex = NativePipeline.IDX_COURT_VALID,
+            courtKpStartIndex = NativePipeline.IDX_COURT_KP_START,
+            currentTimeMs = currentTimeMs,
+            frameWidth = frameWidth,
+            frameHeight = frameHeight
         )
 
-        // ── Track session ──
+        courtManager.updateMiniMap(
+            ballVisible = ballVisible,
+            ballX = result[NativePipeline.IDX_BALL_X],
+            ballY = result[NativePipeline.IDX_BALL_Y]
+        )
+
         totalFramesProcessed++
         if (ballVisible) totalBallDetections++
 
         updateFps()
     }
 
-    /**
-     * Stop analysis and compute final session stats.
-     */
     fun stopSession() {
         _isStopped.value = true
         val durationMs = System.currentTimeMillis() - sessionStartTimeMs
@@ -248,10 +175,10 @@ class LiveViewModel : ViewModel() {
         _sessionStats.value = SessionStats(
             totalFrames = totalFramesProcessed,
             ballDetections = totalBallDetections,
-            courtDetections = totalCourtDetections,
+            courtDetections = courtManager.totalCourtDetections,
             avgFps = avgFps,
             durationMs = durationMs,
-            lastCourtResult = lastValidCourt
+            lastCourtResult = courtManager.lastValidCourt
         )
         Log.i(TAG, "Session stopped — $totalFramesProcessed frames, $totalBallDetections ball hits, ${durationMs}ms")
     }

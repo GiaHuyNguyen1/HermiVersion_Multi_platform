@@ -15,12 +15,17 @@ import com.hermitech.hermivision.data.inference.NativePipeline
  *
  * CRITICAL: imageProxy.close() is called in `finally` block to prevent camera stall.
  */
-class CameraAnalyzer(private val pipeline: NativePipeline, private val onResult: (FloatArray) -> Unit) : ImageAnalysis.Analyzer {
+class CameraAnalyzer(
+    private val pipeline: NativePipeline,
+    private val onResult: (FloatArray) -> Unit,
+    private val onFrameDimensions: ((Int, Int) -> Unit)? = null
+) : ImageAnalysis.Analyzer {
     companion object {
         private const val TAG = "CameraAnalyzer"
     }
 
     private var frameId = 0
+    private var dimensionsReported = false
 
     override fun analyze(imageProxy: ImageProxy) {
         try {
@@ -38,6 +43,10 @@ class CameraAnalyzer(private val pipeline: NativePipeline, private val onResult:
             )
 
             val result = pipeline.processLatestFrame()
+            if (!dimensionsReported) {
+                onFrameDimensions?.invoke(imageProxy.width, imageProxy.height)
+                dimensionsReported = true
+            }
             onResult(result)
             frameId++
         } catch (e: Exception) {

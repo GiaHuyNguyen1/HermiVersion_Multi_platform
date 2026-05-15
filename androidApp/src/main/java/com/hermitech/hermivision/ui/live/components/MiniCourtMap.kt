@@ -12,14 +12,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
+import com.hermitech.hermivision.domain.court.CourtDetectionManager
 import com.hermitech.hermivision.domain.court.CourtHomography
-import com.hermitech.hermivision.ui.live.LiveViewModel
 
 /**
  * 2D top-down mini court map showing ball position projected via homography.
  */
 @Composable
-internal fun MiniCourtMap(miniMapState: LiveViewModel.MiniMapState, modifier: Modifier = Modifier)
+internal fun MiniCourtMap(miniMapState: CourtDetectionManager.MiniMapState, modifier: Modifier = Modifier)
 {
     val mapWidth = CourtHomography.MINI_MAP_WIDTH
     val mapHeight = CourtHomography.MINI_MAP_HEIGHT

@@ -32,6 +32,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hermitech.hermivision.domain.camera.CameraAnalyzer
+import com.hermitech.hermivision.domain.court.CourtDetectionManager
 import com.hermitech.hermivision.ui.live.components.*
 import java.util.concurrent.Executors
 
@@ -43,7 +44,6 @@ fun LiveAnalysisScreen(onBackClick: () -> Unit = {}, liveViewModel: LiveViewMode
     val context = LocalContext.current
     val activity = context as? Activity
 
-    // ── Force landscape + fullscreen ──
     DisposableEffect(Unit) {
         val originalOrientation = activity?.requestedOrientation
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
@@ -65,7 +65,6 @@ fun LiveAnalysisScreen(onBackClick: () -> Unit = {}, liveViewModel: LiveViewMode
         }
     }
 
-    // ── Collect ViewModel state ──
     val isInitialized by liveViewModel.isInitialized.collectAsState()
     val initError by liveViewModel.initError.collectAsState()
     val ballState by liveViewModel.ballState.collectAsState()
@@ -75,7 +74,6 @@ fun LiveAnalysisScreen(onBackClick: () -> Unit = {}, liveViewModel: LiveViewMode
     val sessionStats by liveViewModel.sessionStats.collectAsState()
     val miniMapState by liveViewModel.miniMapState.collectAsState()
 
-    // ── Camera permission ──
     var hasCameraPermission by remember {
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
     }
@@ -90,7 +88,6 @@ fun LiveAnalysisScreen(onBackClick: () -> Unit = {}, liveViewModel: LiveViewMode
         if (hasCameraPermission && !isInitialized) liveViewModel.initPipeline(context)
     }
 
-    // ── Route to appropriate content ──
     Box(modifier = Modifier.fillMaxSize()) {
         when {
             !hasCameraPermission -> PermissionDeniedContent(
@@ -113,10 +110,6 @@ fun LiveAnalysisScreen(onBackClick: () -> Unit = {}, liveViewModel: LiveViewMode
     }
 }
 
-// ═══════════════════════════════════════════════════════
-// Camera binding + overlay composition
-// ═══════════════════════════════════════════════════════
-
 @Composable
 private fun FullscreenCameraContent(
     liveViewModel: LiveViewModel,
@@ -125,7 +118,7 @@ private fun FullscreenCameraContent(
     fps: Float,
     isStopped: Boolean,
     sessionStats: LiveViewModel.SessionStats,
-    miniMapState: LiveViewModel.MiniMapState,
+    miniMapState: CourtDetectionManager.MiniMapState,
     onStop: () -> Unit,
     onClose: () -> Unit
 ) {
@@ -172,7 +165,8 @@ private fun FullscreenCameraContent(
                         .also {
                             it.setAnalyzer(analysisExecutor, CameraAnalyzer(
                                 pipeline = liveViewModel.pipeline,
-                                onResult = { result -> liveViewModel.onResult(result) }
+                                onResult = { result -> liveViewModel.onResult(result) },
+                                onFrameDimensions = { w, h -> liveViewModel.setFrameDimensions(w, h) }
                             ))
                         }
 
@@ -196,7 +190,6 @@ private fun FullscreenCameraContent(
             }
         )
 
-        // Layer 2: Detection overlays
         if (!isStopped && previewWidth > 1) {
             DetectionOverlays(
                 ballState = ballState,
@@ -206,7 +199,6 @@ private fun FullscreenCameraContent(
             )
         }
 
-        // Layer 3: HUD overlay
         AnimatedVisibility(visible = !isStopped, enter = fadeIn(), exit = fadeOut()) {
             HudOverlay(
                 ballState = ballState,
@@ -218,7 +210,6 @@ private fun FullscreenCameraContent(
             )
         }
 
-        // Layer 4: Session results overlay
         AnimatedVisibility(
             visible = isStopped,
             enter = fadeIn() + slideInVertically { it / 2 },
